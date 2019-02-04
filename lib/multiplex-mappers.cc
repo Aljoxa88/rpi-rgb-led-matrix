@@ -21,8 +21,8 @@ namespace internal {
 // mapping in a panel or panel-assembly, which depends on the wiring.
 class MultiplexMapperBase : public MultiplexMapper {
 public:
-  MultiplexMapperBase(const char *name, int stretch_factor)
-    : name_(name), panel_stretch_factor_(stretch_factor) {}
+  MultiplexMapperBase(const char *name, int stretch_factor_w, int stretch_factor_h)
+    : name_(name), panel_stretch_factor_w_(stretch_factor_w), panel_stretch_factor_h_(stretch_factor_h)  {}
 
   // This method is const, but we sneakily remember the original size
   // of the panels so that we can more easily quantize things.
@@ -33,15 +33,16 @@ public:
     panel_rows_ = *rows;
     panel_cols_ = *cols;
 
-    *rows /= panel_stretch_factor_;
-    *cols *= panel_stretch_factor_;
+    *cols *= panel_stretch_factor_w_;
+    *rows /= panel_stretch_factor_h_;
+
   }
 
   virtual bool GetSizeMapping(int matrix_width, int matrix_height,
                               int *visible_width, int *visible_height) const {
     // Matrix width has been altered. Alter it back.
-    *visible_width = matrix_width / panel_stretch_factor_;
-    *visible_height = matrix_height * panel_stretch_factor_;
+    *visible_width = matrix_width / panel_stretch_factor_w_;
+    *visible_height = matrix_height * panel_stretch_factor_h_;
     return true;
   }
 
@@ -59,8 +60,8 @@ public:
 
     int new_x, new_y;
     MapSinglePanel(within_panel_x, within_panel_y, &new_x, &new_y);
-    *matrix_x = chained_panel  * panel_stretch_factor_*panel_cols_ + new_x;
-    *matrix_y = parallel_panel * panel_rows_/panel_stretch_factor_ + new_y;
+    *matrix_x = chained_panel  * panel_stretch_factor_w_*panel_cols_ + new_x;
+    *matrix_y = parallel_panel * panel_rows_/panel_stretch_factor_h_ + new_y;
   }
 
   // Map the coordinates for a single panel. This is to be overridden in
@@ -69,7 +70,8 @@ public:
                               int *matrix_x, int *matrix_y) const = 0;
 protected:
   const char *const name_;
-  const int panel_stretch_factor_;
+  const int panel_stretch_factor_w_;
+  const int panel_stretch_factor_h_;
 
   mutable int panel_cols_;
   mutable int panel_rows_;
@@ -89,7 +91,7 @@ protected:
  */
 class StripeMultiplexMapper : public MultiplexMapperBase {
 public:
-  StripeMultiplexMapper() : MultiplexMapperBase("Stripe", 2) {}
+  StripeMultiplexMapper() : MultiplexMapperBase("Stripe", 2, 2) {}
 
   void MapSinglePanel(int x, int y, int *matrix_x, int *matrix_y) const {
     const bool is_top_stripe = (y % (panel_rows_/2)) < panel_rows_/4;
@@ -101,7 +103,7 @@ public:
 
 class CheckeredMultiplexMapper : public MultiplexMapperBase {
 public:
-  CheckeredMultiplexMapper() : MultiplexMapperBase("Checkered", 2) {}
+  CheckeredMultiplexMapper() : MultiplexMapperBase("Checkered", 2, 2) {}
 
   void MapSinglePanel(int x, int y, int *matrix_x, int *matrix_y) const {
     const bool is_top_check = (y % (panel_rows_/2)) < panel_rows_/4;
@@ -118,7 +120,7 @@ public:
 
 class SpiralMultiplexMapper : public MultiplexMapperBase {
 public:
-  SpiralMultiplexMapper() : MultiplexMapperBase("Spiral", 2) {}
+  SpiralMultiplexMapper() : MultiplexMapperBase("Spiral", 2, 2) {}
 
   void MapSinglePanel(int x, int y, int *matrix_x, int *matrix_y) const {
     const bool is_top_stripe = (y % (panel_rows_/2)) < panel_rows_/4;
@@ -137,7 +139,7 @@ public:
 class ZStripeMultiplexMapper : public MultiplexMapperBase {
 public:
   ZStripeMultiplexMapper(const char *name, int even_vblock_offset, int odd_vblock_offset)
-  : MultiplexMapperBase(name, 2),
+  : MultiplexMapperBase(name, 2, 2),
     even_vblock_offset_(even_vblock_offset),
     odd_vblock_offset_(odd_vblock_offset) {}
 
@@ -161,7 +163,7 @@ private:
 
 class CoremanMapper : public MultiplexMapperBase {
 public:
-  CoremanMapper() : MultiplexMapperBase("coreman", 2) {}
+  CoremanMapper() : MultiplexMapperBase("coreman", 2, 2) {}
 
   void MapSinglePanel(int x, int y, int *matrix_x, int *matrix_y) const {
     const bool is_left_check = (x < panel_cols_/2);
@@ -180,7 +182,7 @@ public:
 
 class Kaler2ScanMapper : public MultiplexMapperBase {
 public:
-  Kaler2ScanMapper() : MultiplexMapperBase("Kaler2Scan", 4) {}
+  Kaler2ScanMapper() : MultiplexMapperBase("Kaler2Scan", 4, 4) {}
 
   void MapSinglePanel(int x, int y, int *matrix_x, int *matrix_y) const {
     // Now we have a 128x4 matrix
@@ -196,7 +198,7 @@ public:
 
 class P10MapperZ : public MultiplexMapperBase {
 public:
-  P10MapperZ() : MultiplexMapperBase("P10-128x4-Z", 4) {}
+  P10MapperZ() : MultiplexMapperBase("P10-128x4-Z", 4, 4) {}
   // supports this panel: https://www.aliexpress.com/item/2017-Special-Offer-P10-Outdoor-Smd-Full-Color-Led-Display-Module-320x160mm-1-2-Scan-Outdoor/32809267439.html?spm=a2g0s.9042311.0.0.Ob0jEw
   // with --led-row-addr-type=2 flag
   void MapSinglePanel(int x, int y, int *matrix_x, int *matrix_y) const {
@@ -239,6 +241,27 @@ public:
   }
 };
 
+class P10SingleColorHUB12Mapper : public MultiplexMapperBase {
+public:
+  P10SingleColorHUB12Mapper(const char *name) : MultiplexMapperBase(name, 32, 2) {}
+  void MapSinglePanel(int x, int y, int *matrix_x, int *matrix_y) const {
+
+int basich = 4;
+int basicw = 8;
+
+int resultrows = 16;
+int resultcols = 32;
+int t = resultcols * basicw;
+int y1=y;
+int x1=t-x-1;
+int q = resultrows / basich;
+int z = (y1 - (y1 % basich)) / q;
+*matrix_y = (z * basich + (basich - 1)) - y1;
+*matrix_x = x1 + ((x1 - (x1 % basicw)) / basicw * ((q - 1) * basicw)) + (z * basicw);
+
+  }
+};
+
 /*
  * Here is where the registration happens.
  * If you add an instance of the mapper here, it will automatically be
@@ -257,6 +280,7 @@ static MuxMapperList *CreateMultiplexMapperList() {
   result->push_back(new Kaler2ScanMapper());
   result->push_back(new ZStripeMultiplexMapper("ZStripeUneven", 8, 0));
   result->push_back(new P10MapperZ());
+  result->push_back(new P10SingleColorHUB12Mapper("P10SingleColor"));
 
   return result;
 }
