@@ -246,18 +246,8 @@ public:
   P10SingleColorHUB12Mapper(const char *name) : MultiplexMapperBase(name, 32, 2) {}
   void MapSinglePanel(int x, int y, int *matrix_x, int *matrix_y) const {
 
-int basich = 4;
-int basicw = 8;
-
-int resultrows = 16;
-int resultcols = 32;
-int t = resultcols * basicw;
-int y1=y;
-int x1=t-x-1;
-int q = resultrows / basich;
-int z = (y1 - (y1 % basich)) / q;
-*matrix_y = (z * basich + (basich - 1)) - y1;
-*matrix_x = x1 + ((x1 - (x1 % basicw)) / basicw * ((q - 1) * basicw)) + (z * basicw);
+    *matrix_y = 3 - y % 4;
+    *matrix_x = 999 - 4 * x + 3 * (x % 8) + (y - (y % 4)) * 2;
 
   }
 };
