@@ -25,6 +25,34 @@
 namespace rgb_matrix {
 namespace {
 
+class P10PixelMapper : public PixelMapper {
+public:
+  P10PixelMapper() : chain_(1) {}
+  virtual const char *GetName() const { return "P10"; }
+
+  virtual bool SetParameters(int chain, int parallel, const char *param) {
+    chain_ = chain;
+    return true;
+  }
+
+  virtual bool GetSizeMapping(int matrix_width, int matrix_height,
+                              int *visible_width, int *visible_height)
+    const {
+      *visible_width = ((matrix_width - 128 * chain_) / 28) * chain_;
+      *visible_height = matrix_height;
+    return true;
+  }
+
+  virtual void MapVisibleToMatrix(int matrix_width, int matrix_height,
+                                  int x, int y,
+                                  int *matrix_x, int *matrix_y) const {
+    *matrix_y = y % 4;
+    *matrix_x = 920 + 4 * x - 3 * (x % 8) - (y - (y % 4)) * 2;
+  }
+  private:
+  int chain_;
+};
+
 class RotatePixelMapper : public PixelMapper {
 public:
   RotatePixelMapper() : angle_(0) {}
@@ -178,6 +206,7 @@ static MapperByName *CreateMapperMap() {
   // Register all the default PixelMappers here.
   RegisterPixelMapperInternal(result, new RotatePixelMapper());
   RegisterPixelMapperInternal(result, new UArrangementMapper());
+  RegisterPixelMapperInternal(result, new P10PixelMapper());
   return result;
 }
 

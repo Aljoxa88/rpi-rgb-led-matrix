@@ -38,7 +38,7 @@ HARDWARE_DESC?=regular
 # If you see that your display is inverse, you might have a matrix variant
 # has uses inverse logic for the RGB bits. In that case: uncomment this.
 # Flag: --led-inverse
-#DEFINES+=-DINVERSE_RGB_DISPLAY_COLORS
+DEFINES+=-DINVERSE_RGB_DISPLAY_COLORS
 
 # For curiosity reasons and while tweaking values for LSB_PWM_NANOSECONDS,
 # uncomment to see refresh rate in terminal.
