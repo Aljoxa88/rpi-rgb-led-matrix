@@ -362,7 +362,7 @@ bool RGBMatrix::StartRefresh() {
 FrameCanvas *RGBMatrix::CreateFrameCanvas() {
   FrameCanvas *result =
     new FrameCanvas(new Framebuffer(params_.rows,
-                                    (params_.cols * 28 + 128 * params_.chain_length),
+                                    (params_.cols * params_.chain_length),
                                     params_.parallel,
                                     params_.scan_mode,
                                     params_.led_rgb_sequence,
